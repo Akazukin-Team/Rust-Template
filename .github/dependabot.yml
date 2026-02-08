@@ -1,13 +1,13 @@
 version: 2
 
 updates:
-  - package-ecosystem: "gradle"
+  - package-ecosystem: "cargo"
     directory: "/"
     rebase-strategy: "disabled"
     schedule:
       interval: "weekly"
     commit-message:
-      prefix: "gradle-deps:"
+      prefix: "cargo-deps:"
     labels:
       - bot/dependabot
       - type/dependency

@@ -15,7 +15,7 @@ on:
 
 
 env:
-  JDK_VERSION: 24
+  CARGO_CHANNEL: beta
 
 
 jobs:
@@ -30,26 +30,28 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
+        uses: Swatinem/rust-cache@v2
 
-      - name: Setup JDK ${{ env.JDK_VERSION }}
-        uses: actions/setup-java@v5
+      - name: Setup JDK ${{ env.CARGO_CHANNEL }}
+        uses: dtolnay/rust-toolchain@stable
         with:
-          java-version: ${{ env.JDK_VERSION }}
-          distribution: 'adopt'
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+          toolchain: ${{ env.CARGO_CHANNEL }}
+          components: rustfmt, clippy
 
       - name: Clean cache
-        run: ./gradlew clean
+        run: cargo clean
 
-      - name: Build and Test
-        run: ./gradlew build test
+      - name: Check and Test
+        run: cargo check test --all-features
+
+      - name: Format
+        run: cargo fmt --all
+
+      - name: Format
+        run: cargo clippy -- -D warnings
+
+      - name: Build
+        run: cargo build --release
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v6

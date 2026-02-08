@@ -1,11 +1,11 @@
-name: Publish snapshot to Repository
+name: Publish release to Repository
 
 on:
   workflow_dispatch:
 
 
 env:
-  JDK_VERSION: 24
+  CARGO_CHANNEL: beta
 
 jobs:
   build:
@@ -20,29 +20,27 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
+        uses: Swatinem/rust-cache@v2
 
-      - name: Setup JDK ${{ env.JDK_VERSION }}
-        uses: actions/setup-java@v5
+      - name: Setup JDK ${{ env.CARGO_CHANNEL }}
+        uses: dtolnay/rust-toolchain@stable
         with:
-          java-version: ${{ env.JDK_VERSION }}
-          distribution: 'adopt'
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+          toolchain: ${{ env.CARGO_CHANNEL }}
+          components: rustfmt, clippy
 
       - name: Clean cache
-        run: ./gradlew clean
+        run: cargo clean
 
-      - name: Build and Test
-        run: ./gradlew build check
+      - name: Check and Test
+        run: cargo check test --all-features
 
-      - name: Publish to Nexus
-        run: ./gradlew publishSnapshotPublicationToSnapshotsRepository -Dorg.gradle.unsafe.configuration-cache=false
+      - name: Check format
+        run: cargo fmt --all -- --check
+
+      - name: Analyze code
+        run: cargo clippy -- -D warnings
+
+      - name: Publish snapshot to Nexus
+        run: cargo publish --registry=akazukin-snapshots
         env:
-          REPOSITORY_USERNAME: ${{ secrets.NEXUS_PUBLIC_LIBRARIES_USERNAME }}
-          REPOSITORY_PASSWORD: ${{ secrets.NEXUS_PUBLIC_LIBRARIES_PASSWORD }}
+          CARGO_REGISTRIES_AKAZUKIN_SNAPSHOTS_TOKEN: ${{ secrets.NEXUS_COMMON_BASE64_TOKEN }}

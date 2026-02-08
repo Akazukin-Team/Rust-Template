@@ -1,8 +1,0 @@
-version: "1.0"
-
-profile:
-  name: qodana.recommended
-
-projectJDK: "8"
-
-linter: jetbrains/qodana-jvm:latest

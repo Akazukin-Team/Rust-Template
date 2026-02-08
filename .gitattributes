@@ -34,9 +34,11 @@
 *.scss          text diff=css
 *.sass          text
 
+# Rust
+.rs
+
 
 # These files are text and should be normalized (Convert crlf => lf)
-
 *.txt           text
 *.df            text
 *.properties    text
@@ -49,6 +51,8 @@
 *.yaml          text
 *.json          text
 *.md            text
+*.toml          text
+*.csv           text
 
 
 # Scripts
