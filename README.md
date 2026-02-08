@@ -92,7 +92,7 @@ To build the project from source, follow these steps:
 ## Continuous Integration
 
 This project uses GitHub Actions for Continuous Integration (CI).
-Every push to the `main` branch automatically triggers the build and test workflow.
+Every push to the production or development branch automatically triggers the build and test workflow.
 
 ---
 
