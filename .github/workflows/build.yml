@@ -39,16 +39,19 @@ jobs:
           components: rustfmt, clippy
 
       - name: Clean cache
-        run: cargo clean
+        run: cargo clean --workspace
 
-      - name: Check and Test
-        run: cargo check test --all-features
+      - name: Check
+        run: cargo check --workspace --all-targets --all-features
+
+      - name: Test
+        run: cargo test --workspace --all-targets --all-features
 
       - name: Format
         run: cargo fmt --all
 
       - name: Format
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Build
         run: cargo build --release
