@@ -1,6 +1,6 @@
 # <PLACEHOLDER_NAME>
 
-[![Build Status](https://github.com/Akazukin-Team/<PLACEHOLDER_REPO>/actions/workflows/build.yml/badge.svg)](https://github.com/Akazukin-Team/<PLACEHOLDER_REPO>/actions/workflows/build.yml)
+[![Build Status](https://github.com/Akazukin-Team/<PLACEHOLDER_REPO>/actions/workflows/build-snapshots.yml/badge.svg)](https://github.com/Akazukin-Team/<PLACEHOLDER_REPO>/actions/workflows/build-snapshots.yml)
 
 <PLACEHOLDER_DESCRIPTION>
 
