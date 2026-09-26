@@ -1,20 +1,12 @@
-name: Build application and test
-
+name: Build snapshots
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [ opened, reopened, synchronize ]
-    branches:
-      - 'prod'
-      - 'main'
-      - 'dev'
   push:
     branches:
       - 'main'
       - 'master'
       - 'prod'
-
 
 env:
   CARGO_TERM_COLOR: always
@@ -23,53 +15,8 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
-  ci-common:
-    name: Common (Linux)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools mold
-
-      - name: Cache Cargo registry and git
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.target }}-
-            ${{ runner.os }}-cargo-
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.11
-
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-
-      - name: Check format
-        run: cargo fmt --all -- --check
-
-      - name: Check
-        run: cargo check --workspace --all-targets --all-features
-
-      - name: Analyze code
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-  ci-linux:
+  build-linux:
     name: Linux (${{ matrix.target }})
-    needs: ci-common
-
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -112,16 +59,32 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
 
-      - name: Test
-        run: cargo nextest --workspace --all-targets --all-features --profile dev --target ${{ matrix.target }}
+      - name: Build binary
+        run: cargo build --profile snapshot --target ${{ matrix.target }}
         env:
           RUSTFLAGS: -C linker=clang -C link-arg=-fuse-ld=mold
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target}}
+          path: target/${{ matrix.target }}/snapshot/[^.]*
+          if-no-files-found: error
+          retention-days: 7
 
-  ci-macos:
+      - name: Upload debug symbols artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}@debug
+          path: |
+            target/${{ matrix.target }}/snapshot/*.dSYM
+            target/${{ matrix.target }}/snapshot/*.debug
+          if-no-files-found: error
+          retention-days: 7
+
+
+  build-macos:
     name: macOS (${{ matrix.target }})
-    needs: ci-common
-
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -155,14 +118,28 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
 
-      - name: Test
-        run: cargo nextest --workspace --all-targets --all-features --profile dev --target ${{ matrix.target }}
+      - name: Build binary
+        run: cargo build --profile snapshot --target ${{ matrix.target }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target}}
+          path: target/${{ matrix.target }}/snapshot/[^.]*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload debug symbols artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}@debug
+          path: target/${{ matrix.target }}/snapshot/*.dSYM
+          if-no-files-found: error
+          retention-days: 7
 
 
-  ci-windows:
+  build-windows:
     name: Windows (${{ matrix.target }})
-    needs: ci-common
-
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -196,8 +173,24 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
 
-      - name: Test
-        run: cargo nextest --workspace --all-targets --all-features --profile dev --target ${{ matrix.target }}
+      - name: Build binary
+        run: cargo build --profile snapshot --target ${{ matrix.target }}
         env:
           RUSTFLAGS: -C linker=rust-lld.exe
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target}}
+          path: target/${{ matrix.target }}/snapshot/*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload debug symbols artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}@debug
+          path: target/${{ matrix.target }}/snapshot/*.pdb
+          if-no-files-found: error
+          retention-days: 7
 
