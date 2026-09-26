@@ -9,3 +9,38 @@ credential-provider = "cargo:token"
 [registries.akazukin-mixed]
 index = "sparse+https://nexus.akazukin.org/repository/cargo-<PLACEHOLDER_REGISTRY>/"
 credential-provider = "cargo:token"
+
+
+[build]
+rustflags = ["-Z", "threads=8"]
+jobs = 12
+
+[profile.dev]
+codegen-units = 128
+opt-level = 0
+debug = true
+panic = "unwind"
+lto = false
+incremental = true
+
+[profile.release]
+codegen-units = 1
+opt-level = 3
+debug = false
+panic = "abort"
+lto = "fat"
+
+[profile.snapshot]
+inherits = "release"
+incremental = true
+codegen-units = 16
+lto = "thin"
+
+[profile.dev-snapshot]
+inherits = "snapshot"
+codegen-units = 128
+opt-level = 0
+debug = true
+panic = "unwind"
+lto = false
+

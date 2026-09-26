@@ -6,50 +6,198 @@ on:
   pull_request:
     types: [ opened, reopened, synchronize ]
     branches:
+      - 'prod'
+      - 'main'
+      - 'dev'
+  push:
+    branches:
       - 'main'
       - 'master'
-      - 'product'
       - 'prod'
-
-      - 'develop'
-      - 'dev'
 
 
 env:
-  CARGO_CHANNEL: beta
-
+  CARGO_TERM_COLOR: always
+  SCCACHE_CACHE_SIZE: 2G
+  RUSTC_WRAPPER: sccache
+  CARGO_INCREMENTAL: "0"
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04
-
-    permissions:
-      contents: read
+  ci-common:
+    name: Common (Linux)
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Cache
-        uses: Swatinem/rust-cache@v2
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools mold
 
-      - name: Setup Rust ${{ env.CARGO_CHANNEL }}
+      - name: Cache Cargo registry and git
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.11
+
+      - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ env.CARGO_CHANNEL }}
-          components: rustfmt, clippy
-
-      - name: Clean cache
-        run: cargo clean --workspace
-
-      - name: Check
-        run: cargo check --workspace --all-targets --all-features
-
-      - name: Test
-        run: cargo test --workspace --all-targets --all-features
+          toolchain: stable
+          target: ${{ matrix.target }}
 
       - name: Check format
         run: cargo fmt --all -- --check
 
+      - name: Check
+        run: cargo check --workspace --all-targets --all-features
+
       - name: Analyze code
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  ci-linux:
+    name: Linux (${{ matrix.target }})
+    needs: ci-common
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools mold
+
+      - name: Cache Cargo registry and git
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.11
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Test
+        run: cargo nextest --workspace --all-targets --all-features --profile dev --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: -C linker=clang -C link-arg=-fuse-ld=mold
+
+
+  ci-macos:
+    name: macOS (${{ matrix.target }})
+    needs: ci-common
+
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+          - target: x86_64-apple-darwin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo registry and git
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.11
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Test
+        run: cargo nextest --workspace --all-targets --all-features --profile dev --target ${{ matrix.target }}
+
+
+  ci-windows:
+    name: Windows (${{ matrix.target }})
+    needs: ci-common
+
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+          - target: aarch64-pc-windows-msvc
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo registry and git
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.11
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Test
+        run: cargo nextest --workspace --all-targets --all-features --profile dev --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: -C linker=rust-lld.exe
+
