@@ -35,7 +35,7 @@
 *.sass          text
 
 # Rust
-.rs
+*.rs
 
 
 # These files are text and should be normalized (Convert crlf => lf)
