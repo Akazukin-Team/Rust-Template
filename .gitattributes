@@ -3,48 +3,13 @@
 
 
 # Source files
-# JVM Lang
-*.java          text diff=java
-*.kt            text diff=kotlin
-*.groovy        text diff=java
-*.scala         text diff=java
-*.gradle        text diff=java
-*.gradle.kts    text diff=kotlin
-
-# C#
-*.cs            text diff=csharp
-*.cshtml        text diff=html
-*.csx           text diff=csharp
-*.sln           text eol=crlf
-*.csproj        text eol=crlf
-
-# JS/TS
-*.js            text
-*.ts            text
-*.jsp           text
-*.jspf          text
-*.jspx          text
-*.ts text
-*.tsx text
-
-# Website
-*.htm           text diff=html
-*.html          text diff=html
-*.css           text diff=css
-*.scss          text diff=css
-*.sass          text
-
 # Rust
 *.rs
 
 
 # These files are text and should be normalized (Convert crlf => lf)
 *.txt           text
-*.df            text
 *.properties    text
-*.tld           text
-*.tag           text
-*.tagx          text
 *.xml           text
 *.svg           text
 *.yml           text
@@ -60,10 +25,6 @@
 *.cmd           text eol=crlf
 *.bat           text eol=crlf
 *.sh            text eol=lf
-
-# Build scripts
-mvnw            text eol=lf
-gradlew         text eol=lf
 
 
 # Binary files
