@@ -15,6 +15,7 @@ credential-provider = "cargo:token"
 rustflags = ["-Z", "threads=8"]
 jobs = 12
 
+
 [profile.dev]
 codegen-units = 128
 opt-level = 0
@@ -26,9 +27,11 @@ incremental = true
 [profile.release]
 codegen-units = 1
 opt-level = 3
-debug = false
 panic = "abort"
 lto = "fat"
+debug = true
+strip = "symbols"
+split-debuginfo = "packed"
 
 [profile.snapshot]
 inherits = "release"
@@ -38,9 +41,11 @@ lto = "thin"
 
 [profile.dev-snapshot]
 inherits = "snapshot"
-codegen-units = 128
-opt-level = 0
-debug = true
+codegen-units = 64
+opt-level = "z"
 panic = "unwind"
 lto = false
+debug = true
+strip = false
+split-debuginfo = "off"
 
