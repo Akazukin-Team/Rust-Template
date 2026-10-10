@@ -24,10 +24,13 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
+            cpu: x86-64-v3
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
+            cpu: x86-64-v3
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
+            cpu: armv8-a
 
     steps:
       - name: Checkout repository
@@ -62,7 +65,7 @@ jobs:
       - name: Build binary
         run: cargo build --profile snapshot --target ${{ matrix.target }}
         env:
-          RUSTFLAGS: -C linker=clang -C link-arg=-fuse-ld=mold
+          RUSTFLAGS: -C linker=clang -C link-arg=-fuse-ld=mold -C target-cpu=${{ matrix.cpu }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -91,62 +94,9 @@ jobs:
       matrix:
         include:
           - target: aarch64-apple-darwin
+            cpu: apple-m1
           - target: x86_64-apple-darwin
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Cache Cargo registry and git
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.target }}-
-            ${{ runner.os }}-cargo-
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.11
-
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-
-      - name: Build binary
-        run: cargo build --profile snapshot --target ${{ matrix.target }}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.target}}
-          path: target/${{ matrix.target }}/snapshot/[^.]*
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload debug symbols artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.target }}@debug
-          path: target/${{ matrix.target }}/snapshot/*.dSYM
-          if-no-files-found: error
-          retention-days: 7
-
-
-  build-windows:
-    name: Windows (${{ matrix.target }})
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-pc-windows-msvc
-          - target: aarch64-pc-windows-msvc
+            cpu: x86-64-v3
 
     steps:
       - name: Checkout repository
@@ -176,7 +126,66 @@ jobs:
       - name: Build binary
         run: cargo build --profile snapshot --target ${{ matrix.target }}
         env:
-          RUSTFLAGS: -C linker=rust-lld.exe
+          RUSTFLAGS: -C target-cpu=${{ matrix.cpu }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target}}
+          path: target/${{ matrix.target }}/snapshot/[^.]*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload debug symbols artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}@debug
+          path: target/${{ matrix.target }}/snapshot/*.dSYM
+          if-no-files-found: error
+          retention-days: 7
+
+
+  build-windows:
+    name: Windows (${{ matrix.target }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            cpu: x86-64-v3
+          - target: aarch64-pc-windows-msvc
+            cpu: armv8-a
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo registry and git
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.11
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Build binary
+        run: cargo build --profile snapshot --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: -C linker=rust-lld.exe -C target-cpu=${{ matrix.cpu }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -193,4 +202,3 @@ jobs:
           path: target/${{ matrix.target }}/snapshot/*.pdb
           if-no-files-found: error
           retention-days: 7
-
