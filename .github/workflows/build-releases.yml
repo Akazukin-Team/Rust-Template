@@ -13,19 +13,19 @@ env:
 
 jobs:
   build-linux:
-    name: Linux (${{ matrix.target }})
-    runs-on: ${{ matrix.os }}
+    name: Linux (${{ matrix.target.id }})
+    runs-on: ${{ matrix.target.os }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
+        target:
+          - id: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             cpu: x86-64-v3
-          - target: x86_64-unknown-linux-musl
+          - id: x86_64-unknown-linux-musl
             os: ubuntu-latest
             cpu: x86-64-v3
-          - target: aarch64-unknown-linux-gnu
+          - id: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
             cpu: armv8-a
 
@@ -45,9 +45,9 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.target.id }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-${{ matrix.target.id }}-
             ${{ runner.os }}-cargo-
 
       - name: Run sccache-cache
@@ -57,42 +57,42 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          target: ${{ matrix.target.id }}
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target.id }}
         env:
-          RUSTFLAGS: -C linker=clang -C link-arg=-fuse-ld=mold -C target-cpu=${{ matrix.cpu }}
+          RUSTFLAGS: -C linker=clang -C link-arg=-fuse-ld=mold -C target-cpu=${{ matrix.target.cpu }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target}}
-          path: target/${{ matrix.target }}/release/[^.]*
+          name: ${{ matrix.target.id}}
+          path: target/${{ matrix.target.id }}/release/[^.]*
           if-no-files-found: error
           retention-days: 7
 
       - name: Upload debug symbols artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}@debug
+          name: ${{ matrix.target.id }}@debug
           path: |
-            target/${{ matrix.target }}/release/*.dSYM
-            target/${{ matrix.target }}/release/*.debug
+            target/${{ matrix.target.id }}/release/*.dSYM
+            target/${{ matrix.target.id }}/release/*.debug
           if-no-files-found: error
           retention-days: 7
 
 
   build-macos:
-    name: macOS (${{ matrix.target }})
+    name: macOS (${{ matrix.target.id }})
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: aarch64-apple-darwin
+        target:
+          - id: aarch64-apple-darwin
             cpu: apple-m1
-          - target: x86_64-apple-darwin
+          - id: x86_64-apple-darwin
             cpu: x86-64-v3
 
     steps:
@@ -106,9 +106,9 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.target.id }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-${{ matrix.target.id }}-
             ${{ runner.os }}-cargo-
 
       - name: Run sccache-cache
@@ -118,40 +118,40 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          target: ${{ matrix.target.id }}
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target.id }}
         env:
-          RUSTFLAGS: -C target-cpu=${{ matrix.cpu }}
+          RUSTFLAGS: -C target-cpu=${{ matrix.target.cpu }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target}}
-          path: target/${{ matrix.target }}/release/[^.]*
+          name: ${{ matrix.target.id}}
+          path: target/${{ matrix.target.id }}/release/[^.]*
           if-no-files-found: error
           retention-days: 7
 
       - name: Upload debug symbols artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}@debug
-          path: target/${{ matrix.target }}/release/*.dSYM
+          name: ${{ matrix.target.id }}@debug
+          path: target/${{ matrix.target.id }}/release/*.dSYM
           if-no-files-found: error
           retention-days: 7
 
 
   build-windows:
-    name: Windows (${{ matrix.target }})
+    name: Windows (${{ matrix.target.id }})
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: x86_64-pc-windows-msvc
+        target:
+          - id: x86_64-pc-windows-msvc
             cpu: x86-64-v3
-          - target: aarch64-pc-windows-msvc
+          - id: aarch64-pc-windows-msvc
             cpu: armv8-a
 
     steps:
@@ -165,9 +165,9 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.target.id }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-${{ matrix.target.id }}-
             ${{ runner.os }}-cargo-
 
       - name: Run sccache-cache
@@ -177,25 +177,25 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          target: ${{ matrix.target.id }}
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target.id }}
         env:
-          RUSTFLAGS: -C linker=rust-lld.exe -C target-cpu=${{ matrix.cpu }}
+          RUSTFLAGS: -C linker=rust-lld.exe -C target-cpu=${{ matrix.target.cpu }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target}}
-          path: target/${{ matrix.target }}/release/*.exe
+          name: ${{ matrix.target.id}}
+          path: target/${{ matrix.target.id }}/release/*.exe
           if-no-files-found: error
           retention-days: 7
 
       - name: Upload debug symbols artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}@debug
-          path: target/${{ matrix.target }}/release/*.pdb
+          name: ${{ matrix.target.id }}@debug
+          path: target/${{ matrix.target.id }}/release/*.pdb
           if-no-files-found: error
           retention-days: 7
