@@ -14,6 +14,8 @@ on:
       - 'main'
       - 'master'
       - 'prod'
+  merge_group:
+    types: [ checks_requested ]
 
 
 env:
